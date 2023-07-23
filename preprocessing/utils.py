@@ -115,11 +115,14 @@ def remove_timestamps(text):
   
 def extract_client_therapist_dialogue(lines):
     chats = {}
-    for line in lines:
+    for line in lines[1:]:
         if line[0] not in chats.keys():
             client_therapist_dialogue = []
             chats[line[0]] = client_therapist_dialogue
             client_answer = None
+            id = int(line[0]) - 1
+            if id > 0 and id != 75:
+                chats[str(id)] = remove_one_worded_counselor_answer(chats[str(id)])
         if line[6] == 'client':
             client_answer = line[8]
         elif line[6] == 'therapist' and client_answer:
@@ -157,4 +160,4 @@ def read_csv_file(file_path):
             lines.append(row)
     return extract_client_therapist_dialogue(lines)
   
-print(read_csv_file("./preprocessing/AnnoMI-simple.csv"))
+print(read_csv_file("./raw_data/AnnoMI-simple.csv"))
