@@ -21,9 +21,6 @@ def remove_one_worded_counselor_answer(data: list[tuple[str,str]]) -> list[tuple
   return ret_list
 print(remove_one_worded_counselor_answer([("i dont know","what i want"),("asdf","asdf a"),("asdf","a"),("bcd","a a"),("asd","asdfasdfasdfasdfasdf"),("fgh a","asdf"),("jkl","a")]))
 
-import re
-
-
 def extract_data_T_C(text):
     # Regular expression patterns for T and C lines
     pattern_t = re.compile(r"(T\d+)([^T^C]*)", re.S)
@@ -69,8 +66,16 @@ def extract_data_T_C_colon(text):
 
 
 # a single page
-with pdfplumber.open(r'Transcript-of-Therapy-Session-by-Douglas-Bower.pdf') as pdf:
-    first_page = pdf.pages[1]
-    print(first_page.extract_text())
-    print(extract_data_T_C_colon(remove_sograyim(first_page.extract_text())))
+def read_page_from_pdf(file_path, page_number):
 
+    with pdfplumber.open(file_path) as pdf:
+        pdf_page = pdf.pages[page_number]
+        return page_number.extract_text()
+
+def read_pages_from_pdf(file_path):
+    # for every page
+    pdf_pages = []
+    with pdfplumber.open(r'test.pdf') as pdf:
+         for pages in pdf.pages:
+            pdf_pages.append(pages.extract_text())
+    return pdf_pages
