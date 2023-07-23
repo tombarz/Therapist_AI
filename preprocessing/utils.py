@@ -19,9 +19,9 @@ def remove_one_worded_counselor_answer(data: list[tuple[str,str]]) -> list[tuple
       client_text += data[i][0] + " "
       bl = True
   return ret_list
-print(remove_one_worded_counselor_answer([("i dont know","what i want"),("asdf","asdf a"),("asdf","a"),("bcd","a a"),("asd","asdfasdfasdfasdfasdf"),("fgh a","asdf"),("jkl","a")]))
+#print(remove_one_worded_counselor_answer([("i dont know","what i want"),("asdf","asdf a"),("asdf","a"),("bcd","a a"),("asd","asdfasdfasdfasdfasdf"),("fgh a","asdf"),("jkl","a")]))
 
-def extract_data_T_C(text):
+def extract_data_b_kind_1(text):
     # Regular expression patterns for T and C lines
     pattern_t = re.compile(r"(T\d+)([^T^C]*)", re.S)
     pattern_c = re.compile(r"(C\d+)([^T^C]*)", re.S)
@@ -43,7 +43,7 @@ def extract_data_T_C(text):
     return paired_lines
 
 
-def extract_data_T_C_colon(text):
+def extract_data_b_kind_2(text):
     # Regular expression patterns for T and C lines
     pattern_t = re.compile(r"(T\d+:)(.*?)(?=C\d+:)", re.S)
     pattern_c = re.compile(r"(C\d+:)(.*?)(?=T\d+:|$)", re.S)
@@ -63,6 +63,26 @@ def extract_data_T_C_colon(text):
     paired_lines = [(t_lines[i][1], c_lines[i][1]) for i in range(min_length)]
 
     return paired_lines
+def extract_data_d_kind(text):
+    # Regular expression patterns for C and H lines
+    pattern_c = re.compile(r"(C:)(.*?)(?=H:|$)", re.S)
+    pattern_h = re.compile(r"(H:)(.*?)(?=C:|$)", re.S)
+
+    # Find all C and H lines
+    c_lines = pattern_c.findall(text)
+    h_lines = pattern_h.findall(text)
+
+    # Remove extra spaces and new lines
+    c_lines = [(c[0], re.sub(r'\s+', ' ', c[1].strip())) for c in c_lines]
+    h_lines = [(h[0], re.sub(r'\s+', ' ', h[1].strip())) for h in h_lines]
+
+    # Find minimum length to prevent index out of range
+    min_length = min(len(c_lines), len(h_lines))
+
+    # Pair C and H lines
+    paired_lines = [(h_lines[i][1], c_lines[i][1]) for i in range(min_length)]
+
+    return paired_lines
 
 
 # a single page
@@ -70,12 +90,14 @@ def read_page_from_pdf(file_path, page_number):
 
     with pdfplumber.open(file_path) as pdf:
         pdf_page = pdf.pages[page_number]
-        return page_number.extract_text()
+        return pdf_page.extract_text()
 
 def read_pages_from_pdf(file_path):
     # for every page
     pdf_pages = []
-    with pdfplumber.open(r'test.pdf') as pdf:
+    with pdfplumber.open(file_path) as pdf:
          for pages in pdf.pages:
             pdf_pages.append(pages.extract_text())
     return pdf_pages
+print(extract_data_d_kind(open('../raw_data/d_kind/1.txt','r').read()))
+print(open('../raw_data/d_kind/1.txt','r').read())
