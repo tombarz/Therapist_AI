@@ -1,25 +1,26 @@
 import re
 import pdfplumber
+import csv
+
 # This removes text written in (). usually it's a text that explains the situation and so it is not needed
 def remove_sograyim(data):
+  data = re.sub(r'\[[^\]]*\]', '', data)
   return re.sub(r'\([^)]*\)', '', data)
 # We don't want to train the chat to return one worded answers. so we will connect 2 client sentences together and remove the counselor's answer if it is one word
 # The data is already set to a list of tuples, tuple[0] == client sentence and tuple[1] == counselor's answer
 def remove_one_worded_counselor_answer(data: list[tuple[str,str]]) -> list[tuple[str,str]]:
   ret_list = []
   client_text = ''
-  bl = False
   for i in range(len(data)):
     if i == len(data) - 1 or len(data[i][1].split(" ")) > 1:
       if client_text != '':
         ret_list.append((client_text + data[i][0],data[i][1]))
+        client_text = ''
       else:
         ret_list.append((data[i][0],data[i][1]))
     else:
       client_text += data[i][0] + " "
-      bl = True
   return ret_list
-#print(remove_one_worded_counselor_answer([("i dont know","what i want"),("asdf","asdf a"),("asdf","a"),("bcd","a a"),("asd","asdfasdfasdfasdfasdf"),("fgh a","asdf"),("jkl","a")]))
 
 def extract_data_b_kind_1(text):
     # Regular expression patterns for T and C lines
@@ -111,6 +112,21 @@ def remove_timestamps(text):
     cleaned_text = pattern_timestamp.sub('', text)
 
     return cleaned_text
+  
+def extract_client_therapist_dialogue(lines):
+    chats = {}
+    for line in lines:
+        if line[0] not in chats.keys():
+            client_therapist_dialogue = []
+            chats[line[0]] = client_therapist_dialogue
+            client_answer = None
+        if line[6] == 'client':
+            client_answer = line[8]
+        elif line[6] == 'therapist' and client_answer:
+            therapist_answer = line[8]
+            chats[line[0]].append((remove_sograyim(client_answer), remove_sograyim(therapist_answer), line[1]))
+            client_answer = None
+    return chats
 
 # a single page
 def read_page_from_pdf(file_path, page_number):
@@ -128,6 +144,17 @@ def read_pages_from_pdf(file_path):
     return pdf_pages
 #print(extract_data_d_kind(open('../raw_data/d_kind/1.txt','r').read()))
 #print(open('../raw_data/d_kind/1.txt','r').read())
-page_one = read_page_from_pdf('../raw_data/a_kind/1.pdf',0)
-print(page_one)
-print(remove_one_worded_counselor_answer(extract_data_a_kind(remove_sograyim(remove_timestamps(page_one)))))
+# page_one = read_page_from_pdf('../raw_data/a_kind/1.pdf',0)
+# print(page_one)
+# print(remove_one_worded_counselor_answer(extract_data_a_kind(remove_sograyim(remove_timestamps(page_one)))))
+  
+
+def read_csv_file(file_path):
+    lines = []
+    with open(file_path, 'r', newline='') as csvfile:
+        csvreader = csv.reader(csvfile)
+        for row in csvreader:
+            lines.append(row)
+    return extract_client_therapist_dialogue(lines)
+  
+print(read_csv_file("./preprocessing/AnnoMI-simple.csv"))
